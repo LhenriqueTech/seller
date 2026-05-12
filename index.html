@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Selleros — Inteligência de Vendas</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #C9A84C;
+    --gold-light: #E8C97A;
+    --gold-dark: #8B6914;
+    --black: #0A0A0A;
+    --black-2: #111111;
+    --black-3: #1A1A1A;
+    --white: #F5F0E8;
+    --gray: #888880;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'Montserrat', sans-serif;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* Custom cursor */
+  .cursor {
+    position: fixed;
+    width: 8px; height: 8px;
+    background: var(--gold);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s;
+  }
+  .cursor-ring {
+    position: fixed;
+    width: 36px; height: 36px;
+    border: 1px solid rgba(201,168,76,0.4);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    transition: all 0.15s ease;
+  }
+
+  /* Noise overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.6;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 28px 60px;
+    background: linear-gradient(to bottom, rgba(10,10,10,0.95), transparent);
+  }
+
+  .nav-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 300;
+    letter-spacing: 0.3em;
+    color: var(--gold);
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 48px;
+    list-style: none;
+  }
+
+  .nav-links a {
+    color: var(--gray);
+    text-decoration: none;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-weight: 500;
+    transition: color 0.3s;
+  }
+
+  .nav-links a:hover { color: var(--gold); }
+
+  .nav-cta {
+    background: transparent;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    padding: 10px 28px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: none;
+    transition: all 0.3s;
+    text-decoration: none;
+  }
+
+  .nav-cta:hover {
+    background: var(--gold);
+    color: var(--black);
+  }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 120px 40px 80px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse 60% 50% at 50% 60%, rgba(201,168,76,0.07) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 30% at 20% 80%, rgba(201,168,76,0.04) 0%, transparent 60%);
+  }
+
+  .hero-line {
+    width: 1px;
+    height: 80px;
+    background: linear-gradient(to bottom, transparent, var(--gold));
+    margin: 0 auto 48px;
+    animation: fadeDown 1.2s ease forwards;
+    opacity: 0;
+  }
+
+  .hero-eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 32px;
+    font-weight: 400;
+    animation: fadeUp 1s ease 0.3s forwards;
+    opacity: 0;
+  }
+
+  .hero-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(52px, 8vw, 110px);
+    font-weight: 300;
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+    animation: fadeUp 1s ease 0.5s forwards;
+    opacity: 0;
+  }
+
+  .hero-title em {
+    font-style: italic;
+    color: var(--gold);
+  }
+
+  .hero-subtitle {
+    font-size: 13px;
+    letter-spacing: 0.15em;
+    color: var(--gray);
+    max-width: 480px;
+    line-height: 1.8;
+    margin: 32px auto 56px;
+    font-weight: 300;
+    animation: fadeUp 1s ease 0.7s forwards;
+    opacity: 0;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    animation: fadeUp 1s ease 0.9s forwards;
+    opacity: 0;
+  }
+
+  .btn-primary {
+    background: var(--gold);
+    color: var(--black);
+    padding: 16px 48px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    font-weight: 600;
+    border: none;
+    cursor: none;
+    text-decoration: none;
+    transition: all 0.3s;
+    display: inline-block;
+  }
+
+  .btn-primary:hover {
+    background: var(--gold-light);
+    transform: translateY(-2px);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--white);
+    padding: 16px 48px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    font-weight: 400;
+    border: 1px solid rgba(245,240,232,0.2);
+    cursor: none;
+    text-decoration: none;
+    transition: all 0.3s;
+    display: inline-block;
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+
+  /* Scroll indicator */
+  .scroll-hint {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    animation: fadeUp 1s ease 1.2s forwards;
+    opacity: 0;
+  }
+
+  .scroll-hint span {
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gray);
+  }
+
+  .scroll-line {
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, var(--gold), transparent);
+    animation: scrollPulse 2s ease infinite;
+  }
+
+  /* STATS */
+  .stats {
+    padding: 80px 60px;
+    border-top: 1px solid rgba(201,168,76,0.15);
+    border-bottom: 1px solid rgba(201,168,76,0.15);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+  }
+
+  .stat {
+    text-align: center;
+    padding: 40px 20px;
+    border-right: 1px solid rgba(201,168,76,0.1);
+  }
+
+  .stat:last-child { border-right: none; }
+
+  .stat-number {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 56px;
+    font-weight: 300;
+    color: var(--gold);
+    line-height: 1;
+    margin-bottom: 12px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gray);
+    font-weight: 400;
+  }
+
+  /* FEATURES */
+  .features {
+    padding: 140px 60px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 80px;
+  }
+
+  .section-number {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 13px;
+    color: var(--gold);
+    letter-spacing: 0.2em;
+  }
+
+  .section-line {
+    width: 60px;
+    height: 1px;
+    background: var(--gold);
+    opacity: 0.4;
+  }
+
+  .section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(36px, 4vw, 56px);
+    font-weight: 300;
+    line-height: 1.1;
+  }
+
+  .section-title em { font-style: italic; color: var(--gold); }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    background: rgba(201,168,76,0.08);
+  }
+
+  .feature-card {
+    background: var(--black-2);
+    padding: 48px 40px;
+    transition: background 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .feature-card::before {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 0; height: 1px;
+    background: var(--gold);
+    transition: width 0.4s ease;
+  }
+
+  .feature-card:hover { background: var(--black-3); }
+  .feature-card:hover::before { width: 100%; }
+
+  .feature-icon {
+    font-size: 28px;
+    margin-bottom: 28px;
+    display: block;
+  }
+
+  .feature-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 24px;
+    font-weight: 400;
+    margin-bottom: 16px;
+    color: var(--white);
+  }
+
+  .feature-desc {
+    font-size: 12px;
+    line-height: 1.9;
+    color: var(--gray);
+    font-weight: 300;
+  }
+
+  /* HOW IT WORKS */
+  .how {
+    padding: 140px 60px;
+    background: var(--black-2);
+    position: relative;
+  }
+
+  .how-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .how-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 100px;
+    align-items: center;
+    margin-top: 80px;
+  }
+
+  .how-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .how-step {
+    display: flex;
+    gap: 32px;
+    padding: 40px 0;
+    border-bottom: 1px solid rgba(201,168,76,0.1);
+  }
+
+  .how-step:first-child { border-top: 1px solid rgba(201,168,76,0.1); }
+
+  .step-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 48px;
+    font-weight: 300;
+    color: rgba(201,168,76,0.2);
+    line-height: 1;
+    min-width: 60px;
+    transition: color 0.3s;
+  }
+
+  .how-step:hover .step-num { color: var(--gold); }
+
+  .step-content {}
+
+  .step-title {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    color: var(--white);
+  }
+
+  .step-desc {
+    font-size: 12px;
+    color: var(--gray);
+    line-height: 1.8;
+    font-weight: 300;
+  }
+
+  .how-visual {
+    position: relative;
+  }
+
+  .dashboard-mockup {
+    background: var(--black-3);
+    border: 1px solid rgba(201,168,76,0.15);
+    padding: 32px;
+    position: relative;
+  }
+
+  .mockup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(201,168,76,0.1);
+  }
+
+  .mockup-title {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  .mockup-badge {
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    background: rgba(201,168,76,0.1);
+    color: var(--gold);
+    padding: 4px 12px;
+    text-transform: uppercase;
+  }
+
+  .mockup-metric {
+    margin-bottom: 20px;
+  }
+
+  .metric-label {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gray);
+    margin-bottom: 6px;
+  }
+
+  .metric-value {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 36px;
+    font-weight: 300;
+    color: var(--white);
+  }
+
+  .metric-change {
+    font-size: 10px;
+    color: #4CAF82;
+    margin-left: 12px;
+  }
+
+  .metric-bar {
+    height: 2px;
+    background: rgba(201,168,76,0.1);
+    margin-top: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .metric-bar-fill {
+    height: 100%;
+    background: linear-gradient(to right, var(--gold-dark), var(--gold));
+    animation: barGrow 2s ease infinite alternate;
+  }
+
+  /* CTA */
+  .cta-section {
+    padding: 160px 60px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cta-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 70% 60% at 50% 50%, rgba(201,168,76,0.06) 0%, transparent 70%);
+  }
+
+  .cta-eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 32px;
+  }
+
+  .cta-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(42px, 6vw, 80px);
+    font-weight: 300;
+    line-height: 1.1;
+    max-width: 800px;
+    margin: 0 auto 24px;
+  }
+
+  .cta-title em { font-style: italic; color: var(--gold); }
+
+  .cta-sub {
+    font-size: 12px;
+    color: var(--gray);
+    letter-spacing: 0.1em;
+    margin-bottom: 56px;
+    font-weight: 300;
+  }
+
+  .cta-form {
+    display: flex;
+    gap: 0;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  .cta-input {
+    flex: 1;
+    background: var(--black-2);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-right: none;
+    color: var(--white);
+    padding: 16px 24px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.3s;
+  }
+
+  .cta-input::placeholder { color: var(--gray); }
+  .cta-input:focus { border-color: var(--gold); }
+
+  .cta-submit {
+    background: var(--gold);
+    color: var(--black);
+    border: none;
+    padding: 16px 32px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-weight: 600;
+    cursor: none;
+    transition: background 0.3s;
+    white-space: nowrap;
+  }
+
+  .cta-submit:hover { background: var(--gold-light); }
+
+  /* FOOTER */
+  footer {
+    padding: 40px 60px;
+    border-top: 1px solid rgba(201,168,76,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-weight: 300;
+    letter-spacing: 0.3em;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+
+  .footer-copy {
+    font-size: 10px;
+    color: var(--gray);
+    letter-spacing: 0.1em;
+  }
+
+  /* Decorative gold lines */
+  .gold-rule {
+    width: 40px;
+    height: 1px;
+    background: var(--gold);
+    opacity: 0.4;
+    margin: 0 auto;
+  }
+
+  /* Animations */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeDown {
+    from { opacity: 0; transform: scaleY(0); transform-origin: top; }
+    to { opacity: 1; transform: scaleY(1); }
+  }
+
+  @keyframes scrollPulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+
+  @keyframes barGrow {
+    from { width: 45%; }
+    to { width: 82%; }
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    nav { padding: 24px 24px; }
+    .nav-links { display: none; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .stat { border-right: none; border-bottom: 1px solid rgba(201,168,76,0.1); }
+    .features { padding: 80px 24px; }
+    .features-grid { grid-template-columns: 1fr; }
+    .how { padding: 80px 24px; }
+    .how-grid { grid-template-columns: 1fr; gap: 60px; }
+    .cta-section { padding: 100px 24px; }
+    .cta-form { flex-direction: column; }
+    .cta-input { border-right: 1px solid rgba(201,168,76,0.2); border-bottom: none; }
+    footer { flex-direction: column; gap: 16px; padding: 32px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">Selleros</a>
+  <ul class="nav-links">
+    <li><a href="#funcionalidades">Funcionalidades</a></li>
+    <li><a href="#como-funciona">Como funciona</a></li>
+    <li><a href="#contato">Contato</a></li>
+  </ul>
+  <a href="#contato" class="nav-cta">Começar agora</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-line"></div>
+  <p class="hero-eyebrow">Inteligência de Vendas · Mercado Livre</p>
+  <h1 class="hero-title">
+    Venda com<br><em>precisão</em><br>estratégica
+  </h1>
+  <p class="hero-subtitle">
+    Dados reais de mercado para vendedores que tomam decisões com inteligência — não com achismo.
+  </p>
+  <div class="hero-actions">
+    <a href="#contato" class="btn-primary">Testar gratuitamente</a>
+    <a href="#funcionalidades" class="btn-secondary">Conheça a plataforma</a>
+  </div>
+  <div class="scroll-hint">
+    <div class="scroll-line"></div>
+    <span>Rolar</span>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat">
+    <div class="stat-number">10k+</div>
+    <div class="stat-label">Anúncios monitorados</div>
+  </div>
+  <div class="stat">
+    <div class="stat-number">98%</div>
+    <div class="stat-label">Precisão nos dados</div>
+  </div>
+  <div class="stat">
+    <div class="stat-number">24h</div>
+    <div class="stat-label">Atualização contínua</div>
+  </div>
+  <div class="stat">
+    <div class="stat-number">+32%</div>
+    <div class="stat-label">Crescimento médio dos clientes</div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="features" id="funcionalidades">
+  <div class="section-header">
+    <span class="section-number">01</span>
+    <div class="section-line"></div>
+  </div>
+  <h2 class="section-title">Tudo que você<br>precisa para <em>dominar</em><br>sua categoria</h2>
+
+  <div class="features-grid" style="margin-top: 60px;">
+    <div class="feature-card">
+      <span class="feature-icon">📊</span>
+      <h3 class="feature-title">Análise de Concorrentes</h3>
+      <p class="feature-desc">Monitore o desempenho dos seus concorrentes em tempo real. Veja tendências de vendas, variações de preço e movimentos estratégicos antes de qualquer um.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🔍</span>
+      <h3 class="feature-title">Inteligência de Mercado</h3>
+      <p class="feature-desc">Identifique nichos com alta demanda e baixa concorrência. Descubra oportunidades que outros vendedores ainda não enxergaram.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">📈</span>
+      <h3 class="feature-title">Otimização de Anúncios</h3>
+      <p class="feature-desc">Recomendações baseadas em dados reais para melhorar títulos, descrições e posicionamento dos seus anúncios no algoritmo do ML.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">💰</span>
+      <h3 class="feature-title">Precificação Estratégica</h3>
+      <p class="feature-desc">Acompanhe a evolução de preços da sua categoria e ajuste sua estratégia para maximizar margem sem perder competitividade.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🎯</span>
+      <h3 class="feature-title">Palavras-chave</h3>
+      <p class="feature-desc">Descubra os termos mais buscados pelos compradores na sua categoria e aplique nos seus títulos para ganhar mais visibilidade.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">📦</span>
+      <h3 class="feature-title">Gestão de Estoque</h3>
+      <p class="feature-desc">Antecipe picos de demanda com base em dados históricos e sazonalidade. Nunca mais perca vendas por falta de estoque.</p>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="como-funciona">
+  <div class="how-inner">
+    <div class="section-header">
+      <span class="section-number">02</span>
+      <div class="section-line"></div>
+    </div>
+    <h2 class="section-title">Como a <em>Selleros</em><br>funciona</h2>
+
+    <div class="how-grid">
+      <div class="how-steps">
+        <div class="how-step">
+          <div class="step-num">01</div>
+          <div class="step-content">
+            <div class="step-title">Conecte sua conta</div>
+            <p class="step-desc">Integração segura com o Mercado Livre via OAuth. Seus dados ficam protegidos e só você tem acesso.</p>
+          </div>
+        </div>
+        <div class="how-step">
+          <div class="step-num">02</div>
+          <div class="step-content">
+            <div class="step-title">Selecione suas categorias</div>
+            <p class="step-desc">Defina quais mercados e concorrentes você quer monitorar. A plataforma começa a coletar dados imediatamente.</p>
+          </div>
+        </div>
+        <div class="how-step">
+          <div class="step-num">03</div>
+          <div class="step-content">
+            <div class="step-title">Receba insights acionáveis</div>
+            <p class="step-desc">Dashboards claros e recomendações diretas. Sem complexidade — só o que importa para aumentar suas vendas.</p>
+          </div>
+        </div>
+        <div class="how-step">
+          <div class="step-num">04</div>
+          <div class="step-content">
+            <div class="step-title">Cresça com consistência</div>
+            <p class="step-desc">Tome decisões baseadas em dados reais e veja seu negócio crescer de forma previsível e escalável.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="how-visual">
+        <div class="dashboard-mockup">
+          <div class="mockup-header">
+            <span class="mockup-title">Painel · Selleros</span>
+            <span class="mockup-badge">● Ao vivo</span>
+          </div>
+          <div class="mockup-metric">
+            <div class="metric-label">Vendas estimadas · concorrente principal</div>
+            <div class="metric-value">1.842 <span class="metric-change">↑ 12%</span></div>
+            <div class="metric-bar"><div class="metric-bar-fill" style="width: 72%"></div></div>
+          </div>
+          <div class="mockup-metric">
+            <div class="metric-label">Preço médio da categoria</div>
+            <div class="metric-value">R$ 347 <span class="metric-change">↑ 3%</span></div>
+            <div class="metric-bar"><div class="metric-bar-fill" style="width: 58%; animation-delay: 0.3s"></div></div>
+          </div>
+          <div class="mockup-metric">
+            <div class="metric-label">Oportunidades identificadas</div>
+            <div class="metric-value">7 <span style="font-size:13px; color: var(--gold); margin-left:8px;">nichos</span></div>
+            <div class="metric-bar"><div class="metric-bar-fill" style="width: 35%; animation-delay: 0.6s"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section" id="contato">
+  <p class="cta-eyebrow">Acesso antecipado</p>
+  <h2 class="cta-title">Pronto para vender com <em>mais inteligência</em>?</h2>
+  <p class="cta-sub">Deixe seu e-mail e entraremos em contato para liberar seu acesso.</p>
+  <div class="cta-form">
+    <input type="email" class="cta-input" placeholder="seu@email.com">
+    <button class="cta-submit">Quero acesso</button>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">Selleros</div>
+  <p class="footer-copy">© 2025 Selleros · Todos os direitos reservados</p>
+</footer>
+
+<script>
+  // Custom cursor
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursorRing');
+  let mx = 0, my = 0, rx = 0, ry = 0;
+
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    cursor.style.left = mx + 'px';
+    cursor.style.top = my + 'px';
+  });
+
+  function animRing() {
+    rx += (mx - rx) * 0.12;
+    ry += (my - ry) *.12;
+    ring.style.left = rx + 'px';
+    ring.style.top = ry + 'px';
+    requestAnimationFrame(animRing);
+  }
+  animRing();
+
+  document.querySelectorAll('a, button, input').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      ring.style.transform = 'translate(-50%,-50%) scale(1.8)';
+      ring.style.borderColor = 'rgba(201,168,76,0.8)';
+    });
+    el.addEventListener('mouseleave', () => {
+      ring.style.transform = 'translate(-50%,-50%) scale(1)';
+      ring.style.borderColor = 'rgba(201,168,76,0.4)';
+    });
+  });
+
+  // Scroll reveal
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.style.animation = 'fadeUp 0.8s ease forwards';
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.15 });
+
+  document.querySelectorAll('.feature-card, .how-step, .stat').forEach(el => {
+    el.style.opacity = '0';
+    observer.observe(el);
+  });
+</script>
+</body>
+</html>
